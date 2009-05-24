@@ -1,0 +1,42 @@
+-Orange Highlighter on Prototype Setup
+def colorTargetMatch(c):
+  if c[0] < 235 and c[0] > 192: #red
+    if c[1] < 190 and c[1] > 130: #green
+      if c[2] < 156 and c[2] > 120: #blue
+        return True
+  return False
+
+def colorBandMatch(c):
+  if c[0] < 140 and c[0] > 60: #red
+    if c[1] < 150 and c[1] > 80: #green
+      if c[2] < 170 and c[2] > 110: #blue
+        return True
+  return False
+
+  x = point[0] - 17
+  y = point[1] + 22
+  
+  
+-Mockup image
+def colorTargetMatch(color):
+  if color[0] == 128 and color[1] == 128 and color[2] == 128:
+    return True
+  else:
+    return False
+
+def colorBandMatch(c):
+  if c[0] < 140 and c[0] > 60:
+    if c[1] < 150 and c[1] > 80:
+      if c[2] < 170 and c[2] > 110:
+        return True
+  return False
+  
+  x = point[0]
+  y = point[1] 
+  
+-Orange Highlighter on Prototype Setup v2 (patch for previous)
+def colorTargetMatch(c):
+  if c[0] < 235 and c[0] > 170: #red
+  
+  x = point[0] - 30
+  y = point[1]
