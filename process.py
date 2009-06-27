@@ -55,9 +55,15 @@ for y in range(0, im.size[1]):
       pix[0,(start+y)/2] = (0,255,0,255)
     start = -1
 
+m = 145
+l = 600
+
 for point in itertools.product(xlist, ylist):
-  x = point[0] - 5# - (point[1]*0.05) - 5
-  y = point[1] + (x*0.1) - 15
+  x = point[0] #- 5# - (point[1]*0.05) - 5
+  y = point[1] #+ (x*0.1) - 15
+  
+  x = (y + (l/(x-m))*x)/((l/(x-m))-((y-m)/l))
+  y = ((y-m)/l)*x + y
   
   if x-box < 0 or x+box > im.size[0] or y-box < 0 or y+box > im.size[1]:
     continue
