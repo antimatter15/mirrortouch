@@ -1,24 +1,24 @@
 from PIL import Image, ImageColor, ImageDraw
 import itertools
 
-im = Image.open("2009-04-13-162126.jpg")
-im = im.transform(im.size, Image.QUAD, (32-15,23-10,44-15,192-10,208-15,186-10,208-15,20-10))
+im = Image.open("2009-06-27-155416.jpg")
+#im = im.transform(im.size, Image.QUAD, (32-15,23-10,44-15,192-10,208-15,186-10,208-15,20-10))
 pix = im.load()
 draw = ImageDraw.Draw(im)
 
-box = 25
+box = 10
 
 def colorTargetMatch(c):
-  if c[0] < 109+15 and c[0] > 109-40: #red
-    if c[1] < 115+15 and c[1] > 115-40: #green
-      if c[2] < 137+15 and c[2] > 137-40: #blue
+  if c[0] < 130 and c[0] > 90: #red
+    if c[1] < 140 and c[1] > 100: #green
+      if c[2] < 170 and c[2] > 120: #blue
         return True
   return False
 
 def colorBandMatch(c):
-  if c[0] < 170 and c[0] > 110: #red
-    if c[1] < 175 and c[1] > 125: #green
-      if c[2] < 190 and c[2] > 140: #blue
+  if c[0] < 215 and c[0] > 110: #red
+    if c[1] < 215 and c[1] > 125: #green
+      if c[2] < 215 and c[2] > 140: #blue
         return True
   return False
   
@@ -55,20 +55,32 @@ for y in range(0, im.size[1]):
       pix[0,(start+y)/2] = (0,255,0,255)
     start = -1
 
-m = 145
-l = 600
+xm = 210.0
+ym = 130.0
+l = 525.0
 
 for point in itertools.product(xlist, ylist):
   x = point[0] #- 5# - (point[1]*0.05) - 5
   y = point[1] #+ (x*0.1) - 15
   
-  x = (y + (l/(x-m))*x)/((l/(x-m))-((y-m)/l))
-  y = ((y-m)/l)*x + y
+  print "Iterating: x: ",x," y: ", y
+  
+  x = (y + (l/float(x-xm))*x)/((l/float(x-xm))-(float(y-ym)/l))
+
+  y = (float(y-ym)/l)*x + y
+  
+  x = int(x)
+  y = int(y)
+  
+  print "Adjusted: x: ",x," y: ",y
   
   if x-box < 0 or x+box > im.size[0] or y-box < 0 or y+box > im.size[1]:
+    print "Out of Range"
     continue
   
   color = pix[x, y]
+  print color
+  
   pix[x, y] = (255, 255, 255, 255)
   if colorTargetMatch(color) == True:
     pix[x, y] = (255, 255, 0, 255)
@@ -107,5 +119,5 @@ for point in itertools.product(xlist, ylist):
     #yay, the point is actually on the blah
   
 
-im.show()
+#im.show()
 im.save("ScanOut", "PNG")
