@@ -1,7 +1,7 @@
 from PIL import Image, ImageColor, ImageDraw
 import itertools
 
-im = Image.open("2009-06-27-155416.jpg")
+im = Image.open("2009-06-27-160922.jpg")
 #im = im.transform(im.size, Image.QUAD, (32-15,23-10,44-15,192-10,208-15,186-10,208-15,20-10))
 pix = im.load()
 draw = ImageDraw.Draw(im)
@@ -9,9 +9,9 @@ draw = ImageDraw.Draw(im)
 box = 10
 
 def colorTargetMatch(c):
-  if c[0] < 130 and c[0] > 90: #red
+  if c[0] < 130 and c[0] > 70: #red
     if c[1] < 140 and c[1] > 100: #green
-      if c[2] < 170 and c[2] > 120: #blue
+      if c[2] < 170 and c[2] > 100: #blue
         return True
   return False
 
@@ -111,7 +111,7 @@ for point in itertools.product(xlist, ylist):
     
     draw.text((x+1, y+1), str(ratio), fill=(0,0,0))
     #draw.rectangle(((x-box, y-box),(x+box, y+box)), outline=(0,0,0))
-    if ratio > 0.09 and ratio < 0.3:
+    if ratio > 0.09 and ratio < 0.8:
       pix[x, y] = (255, 0, 255, 255)
       draw.rectangle(((x-10, y-10),(x+10, y+10)), outline=(100,255,100))
       print ratio
