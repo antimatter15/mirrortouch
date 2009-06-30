@@ -19,9 +19,9 @@ def colorTargetMatch(c):
   return False
 
 def colorBandMatch(c):
-  if c[0] < 215 and c[0] > 110: #red
-    if c[1] < 215 and c[1] > 125: #green
-      if c[2] < 215 and c[2] > 140: #blue
+  if c[0] < 255 and c[0] > 80: #red
+    if c[1] < 255 and c[1] > 80: #green
+      if c[2] < 255 and c[2] > 80: #blue
         return True
   return False
       
@@ -48,9 +48,10 @@ def get_image():
           start = x
       elif start != -1:
         if x - start < 10:
-          print "X Axis Center Discarded; Start: ",start," End: ",x
+          pass
+          #print "X Axis Center Discarded; Start: ",start," End: ",x
         else:
-          print "X Axis Center Found; Start: ",start," End: ",x
+          #print "X Axis Center Found; Start: ",start," End: ",x
           xlist.append((start+x)/2)
           pix[(start+x)/2, 0] = (0,255,0,255)
         start = -1
@@ -64,27 +65,28 @@ def get_image():
           start = y
       elif start != -1:
         if y - start < 10:
-          print "Y Axis Center Discarded; Start: ",start," End: ",y
+          #print "Y Axis Center Discarded; Start: ",start," End: ",y
+          pass
         else:
-          print "Y Axis Center Found; Start: ",start," End: ",y
+          #print "Y Axis Center Found; Start: ",start," End: ",y
           ylist.append((start+y)/2)
           pix[0,(start+y)/2] = (0,255,0,255)
         start = -1
 
-    xm = 210.0
-    ym = 130.0
-    l = 525.0
+    xm = im.size[0]/2.0
+    ym = im.size[1]/2.0
+    l = 1000.0
 
     for point in itertools.product(xlist, ylist):
-      x = point[0] #- 5# - (point[1]*0.05) - 5
-      y = point[1] #+ (x*0.1) - 15
+      x = float(point[0]) #- 5# - (point[1]*0.05) - 5
+      y = float(point[1]) #+ (x*0.1) - 15
       
       #print "Iterating: x: ",x," y: ", y
-      if x-xm > 0 and y-ym > 0:
-        x = (y + (l/float(x-xm))*x)/((l/float(x-xm))-(float(y-ym)/l))
-      else:
+      if x-xm == 0 or y-ym == 0:
+        print "DIVIDE BY ZERO ERROR"
         continue
         
+      x = (y + (l/float(x-xm))*x)/((l/float(x-xm))-(float(y-ym)/l))
       y = (float(y-ym)/l)*x + y
       
       x = int(x)
@@ -92,7 +94,7 @@ def get_image():
       
       print "Adjusted: x: ",x," y: ",y
       
-      if x-box < 0 or x+box > im.size[0] or y-box < 0 or y+box > im.size[1]:
+      if x-box < 0 or x+box > im.size[0] - 1 or y-box < 0 or y+box > im.size[1] - 1:
         print "Out of Range"
         continue
       
@@ -141,7 +143,7 @@ def get_image():
 fps = 60.0
 pygame.init()
 window = pygame.display.set_mode((640,480))
-pygame.display.set_caption("WebCam Demo")
+pygame.display.set_caption("MirrorTouch")
 screen = pygame.display.get_surface()
 
 while True:
