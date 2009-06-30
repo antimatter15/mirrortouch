@@ -120,4 +120,4 @@ for point in itertools.product(xlist, ylist):
   
 
 #im.show()
-im.save("ScanOut", "PNG")
+im.save("ScanOut.png", "PNG")
