@@ -14,9 +14,11 @@ box = 10
 canvas = Image.new("RGB", (640,480))
 canvaspix = canvas.load()
 draw2 = ImageDraw.Draw(canvas)
-
+touchconf = False
 camera = highgui.cvCreateCameraCapture(0)
 
+rmax = -255
+rmin = 255
 
 def colorTargetMatch(c):
   if c[0] < 245 and c[0] > 170: #red
@@ -24,30 +26,56 @@ def colorTargetMatch(c):
       if c[2] < 205 and c[2] > 70: #blue
         return True
   return False
+  
 
-def colorReflectionDiff(c,d, dolog = False):
+
+def colorReflectionDiff(c,d, x, dolog = False):
+  r = c[0]-d[0]
+  g = c[1]-d[1]
+  b = c[2]-d[2]
+  diffsum = abs(r) + abs(g) + abs(b)
   if dolog == True:
-    print "Red",c[0]-d[0]
-    print "Green",c[1]-d[1]
-    print "Blue",c[2]-d[2]
-  if c[0]-d[0] < 50 and c[0]-d[0] > 15: #red
-    if c[1]-d[1] < 13 and c[1]-d[1] > -60: #green
-      if c[2]-d[2] < 13 and c[2]-d[2] > -60: #blue
-        return True
+    print "Red",r
+    print "Green",g
+    print "Blue",b
+    print "Sum",diffsum
+  
+  if touchconf == True:
+    print r,g,b,diffsum
+  if g > 50 and r > 50 and b > 50:
+    return True
+  if g > r or b > r:
+    return False
+  if diffsum < 10 or diffsum > 150:
+    return False
+  if g > 10:
+    return False
+  if b > 20:
+    return False
+  if diffsum - ((g+b)/2) < 30*(1-x):
+    return False
+  #if r < 50 and r > 10: #red
+  #  if g < 10 and g > -60: #green
+  #    if b < 20 and b > -60: #blue
+  #      return True
+  return True
   return False
 
+def colorReflectionGrade(c,d,x,y):
+  r = c[0]-d[0]
+  g = c[1]-d[1]
+  b = c[2]-d[2]
+  
 
+xs = 273
+xe = 398
 
+tl = 184
+bl = 406
 
+tr = 60
+br = 476
 
-xs = 146
-xe = 277
-
-tl = 152
-bl = 395
-
-tr = 9
-br = 468
 
 
 
@@ -96,9 +124,9 @@ def get_image(dolog = False):
       if count == -1:
         break
 
-    if xp > 0 and yp - 20> 0 and xp + 10 < im.size[0]:
+    if xp > 0 and yp - 10> 0 and xp + 10 < im.size[0]:
       pix[xp,yp] = (255,255,255,255)
-      if colorReflectionDiff(pix[xp+10,yp],pix[xp+10,yp-20], dolog):
+      if colorReflectionDiff(pix[xp+10,yp],pix[xp+10,yp-10], ((xp - xs)/float(w)), dolog):
         #print "reflectoin: x:",(xe-x),"y:",(y-(count/2))
         draw.rectangle(((xp-10, yp-10),(xp+10, yp+10)), outline=(100,255,100))
         xd = ((xp - xs)/float(w))*640
@@ -111,7 +139,7 @@ def get_image(dolog = False):
         draw2.rectangle(((xd-5, yd-5),(xd+5, yd+5)), outline=(100,255,100))
       else:
         #print "fayle"
-        pix[xp+10,yp-20] = (255,255,255,255)
+        pix[xp+10,yp-10] = (255,255,255,255)
         pix[xp+10,yp] = (255,0,255,255)
     if mode == "draw":
       return canvas
@@ -129,6 +157,8 @@ subavg = 0
 print "Press d to switch to draw mode."
 print "Press i to switch to image mode."
 print "Press c to calibrate image."
+print "Middle click to clear drawing canvas."
+print "Right click to save drawing/enable debug mode."
 
 while True:
     dolog = False
@@ -137,7 +167,11 @@ while True:
         if event.type == QUIT:
             sys.exit(0)
         if event.type == KEYDOWN:
-    
+          if event.unicode == "g":
+            touchconf = True
+            print "Move your finger around the visible area, click to stop"
+          else:
+            touchconf = False  
           if event.unicode == "d":
             mode = "draw"
           elif event.unicode == "i":
@@ -146,6 +180,7 @@ while True:
             calibrate = True
             print "Click Top Left Corner"
         if event.type == MOUSEBUTTONDOWN:
+            touchconf = False
             if event.button == 3:
               dolog = True
               import datetime
@@ -156,6 +191,7 @@ while True:
               draw2 = ImageDraw.Draw(canvas)
               print "Reset Canvas"
             elif event.button == 1 and calibrate == True:
+             
               clicks += 1
               if clicks == 1:
                 tl = event.pos[1]
