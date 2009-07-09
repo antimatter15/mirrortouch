@@ -20,14 +20,46 @@ camera = highgui.cvCreateCameraCapture(0)
 rmax = -255
 rmin = 255
 
+
+xs = 210
+xe = 325
+
+tl = 164
+bl = 396
+
+tr = 29
+br = 474
+
+
+
 def colorTargetMatch(c):
   if c[0] < 245 and c[0] > 170: #red
     if c[1] < 220 and c[1] > 85: #green
       if c[2] < 205 and c[2] > 70: #blue
         return True
   return False
-  
 
+  
+def colorReflectionTest(draw, c, d, t, x, y, dolog = False):
+  im = 4
+  sm = 2
+  ms = im + sm
+  ra = (t[0]*im + d[0]*sm)/ms
+  ga = (t[1]*im + d[1]*sm)/ms
+  ba = (t[2]*im + d[2]*sm)/ms
+  r = c[0] - ra
+  g = c[1] - ga
+  b = c[2] - ba
+  draw.text((x,y), str(r)+","+str(g)+","+str(b), fill=(ra,ga,ba))
+  if dolog == True:
+    print "Red",r
+    print "Green",g
+    print "Blue",b
+  if r > -90 and r < -40:
+    if g > -80 and g < -20:
+      if b > -60 and b < -20:
+        return True
+  return False
 
 def colorReflectionDiff(c,d, x, dolog = False):
   r = c[0]-d[0]
@@ -61,20 +93,13 @@ def colorReflectionDiff(c,d, x, dolog = False):
   return True
   return False
 
-def colorReflectionGrade(c,d,x,y):
+def colorDiffGrade(c,d):
   r = c[0]-d[0]
   g = c[1]-d[1]
   b = c[2]-d[2]
+  return abs(r) + abs(g) + abs(b)
   
 
-xs = 273
-xe = 398
-
-tl = 184
-bl = 406
-
-tr = 60
-br = 476
 
 
 
@@ -107,7 +132,7 @@ def get_image(dolog = False):
       if x % 3 > 0:
         continue
       for y in range(tr + int(ytr*x), br + int(ybr * x)):
-        if y % 3 > 0:
+        if y % 2 > 0:
           continue
         if colorTargetMatch(pix[xe-x,y]):
           pix[xe-x,y] = (0,255,0,255)
@@ -119,14 +144,17 @@ def get_image(dolog = False):
             xp = xe-x
             yp = y-(count/2)
             wp = count
+            
             count = -1
             break
       if count == -1:
         break
 
     if xp > 0 and yp - 10> 0 and xp + 10 < im.size[0]:
+      touchcolor = pix[xp-5,yp]
       pix[xp,yp] = (255,255,255,255)
-      if colorReflectionDiff(pix[xp+10,yp],pix[xp+10,yp-10], ((xp - xs)/float(w)), dolog):
+      #if colorShadowTest(draw, pix[xp+5, yp-10], pix[xp+5,yp-10], xp, yp):
+      if colorReflectionTest(draw, pix[xp+5,yp],pix[xp+5,yp-10], touchcolor, xp, yp, dolog):
         #print "reflectoin: x:",(xe-x),"y:",(y-(count/2))
         draw.rectangle(((xp-10, yp-10),(xp+10, yp+10)), outline=(100,255,100))
         xd = ((xp - xs)/float(w))*640
@@ -139,8 +167,9 @@ def get_image(dolog = False):
         draw2.rectangle(((xd-5, yd-5),(xd+5, yd+5)), outline=(100,255,100))
       else:
         #print "fayle"
-        pix[xp+10,yp-10] = (255,255,255,255)
-        pix[xp+10,yp] = (255,0,255,255)
+        pix[xp+5,yp-10] = (255,255,255,255)
+        pix[xp+5,yp] = (255,0,255,255)
+        pix[xp-5,yp] = (0,0,255,255)
     if mode == "draw":
       return canvas
     else:
@@ -184,7 +213,7 @@ while True:
             if event.button == 3:
               dolog = True
               import datetime
-              canvas.save("purty"+str(datetime.datetime.now().isoformat())+".png","PNG")
+              canvas.save("imgs/purty"+str(datetime.datetime.now().isoformat())+".png","PNG")
             elif event.button == 2:
               canvas = Image.new("RGB", (640,480))
               canvaspix = canvas.load()
