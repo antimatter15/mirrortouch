@@ -17,19 +17,13 @@ draw2 = ImageDraw.Draw(canvas)
 touchconf = False
 camera = highgui.cvCreateCameraCapture(0)
 
-rmax = -255
-rmin = 255
+f = open('shinyconf.py', 'r')
+exec(f.read())
+f.close()
 
-
-xs = 210
-xe = 325
-
-tl = 164
-bl = 396
-
-tr = 29
-br = 474
-
+f = open('shinyautoconf.py', 'r')
+exec(f.read())
+f.close()
 
 
 def colorTargetMatch(c):
@@ -41,12 +35,12 @@ def colorTargetMatch(c):
 
   
 def colorReflectionTest(draw, c, d, t, x, y, dolog = False):
-  im = 4
-  sm = 2
-  ms = im + sm
-  ra = (t[0]*im + d[0]*sm)/ms
-  ga = (t[1]*im + d[1]*sm)/ms
-  ba = (t[2]*im + d[2]*sm)/ms
+  im = .57
+  
+  sm = 1.0-im
+  ra = t[0]*im + d[0]*sm
+  ga = t[1]*im + d[1]*sm
+  ba = t[2]*im + d[2]*sm
   r = c[0] - ra
   g = c[1] - ga
   b = c[2] - ba
@@ -55,9 +49,9 @@ def colorReflectionTest(draw, c, d, t, x, y, dolog = False):
     print "Red",r
     print "Green",g
     print "Blue",b
-  if r > -90 and r < -40:
-    if g > -80 and g < -20:
-      if b > -60 and b < -20:
+  if r > -10 and r < 10:
+    if g > -10 and g < 10:
+      if b > -10 and b < 10:
         return True
   return False
 
@@ -101,9 +95,6 @@ def colorDiffGrade(c,d):
   
 
 
-
-
-
 w = xe-xs
 ytr = float(tl-tr)/float(w);
 ybr = float(bl-br)/float(w);
@@ -126,13 +117,14 @@ def get_image(dolog = False):
     xp = 0
     yp = 0
     wp = 0
+    oy = 0
 
     for x in range(0, w):
       count = 0
       if x % 3 > 0:
         continue
       for y in range(tr + int(ytr*x), br + int(ybr * x)):
-        if y % 2 > 0:
+        if y % 4 > 0:
           continue
         if colorTargetMatch(pix[xe-x,y]):
           pix[xe-x,y] = (0,255,0,255)
@@ -143,6 +135,7 @@ def get_image(dolog = False):
             #print "x:",(xe-x),"y:",(y-(count/2))
             xp = xe-x
             yp = y-(count/2)
+            oy = y-count
             wp = count
             
             count = -1
@@ -156,18 +149,15 @@ def get_image(dolog = False):
       #if colorShadowTest(draw, pix[xp+5, yp-10], pix[xp+5,yp-10], xp, yp):
       if colorReflectionTest(draw, pix[xp+5,yp],pix[xp+5,yp-10], touchcolor, xp, yp, dolog):
         #print "reflectoin: x:",(xe-x),"y:",(y-(count/2))
-        draw.rectangle(((xp-10, yp-10),(xp+10, yp+10)), outline=(100,255,100))
+        draw.rectangle(((xp-10, yp-10),(xp+10, oy+10)), outline=(100,255,100))
         xd = ((xp - xs)/float(w))*640
         disttop = (((tr-tl)/w) * (xp-xs)) + tl
-       
         vwid = (bl-tl) + (((br-tr)-(bl-tl)) * ((xp - xs)/float(w)))
-        
         yd = ((yp - disttop)/vwid) * 480
-        
-        draw2.rectangle(((xd-5, yd-5),(xd+5, yd+5)), outline=(100,255,100))
+        draw2.rectangle(((xd-5, yd-5),(xd+5, yd+5)), outline=(100,255,100), fill=(100,255,100))
       else:
         #print "fayle"
-        pix[xp+5,yp-10] = (255,255,255,255)
+        pix[xp+5,oy-10] = (255,255,255,255)
         pix[xp+5,yp] = (255,0,255,255)
         pix[xp-5,yp] = (0,0,255,255)
     if mode == "draw":
@@ -241,7 +231,7 @@ while True:
                 xe = (subavg + event.pos[0])/2
                 print "Done. To recalibrate, press c and then click Top Left corner again."
                 calibrate = False
-                print """xs = """+str(xs)+"""
+                conf = """xs = """+str(xs)+"""
 xe = """+str(xe)+"""
 
 tl = """+str(tl)+"""
@@ -249,6 +239,11 @@ bl = """+str(bl)+"""
 
 tr = """+str(tr)+"""
 br = """+str(br)
+                print conf
+                f = open('shinyautoconf.py', 'w')
+                f.write(conf)
+                f.close()
+                print "Wrote configuration to file shinyautoconf.py"
                 clicks = 0
             
     im = get_image(dolog)
