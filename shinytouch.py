@@ -10,6 +10,7 @@ from opencv import highgui
 mode = "image"
 calibrate = False
 box = 10
+buildrange = False
 
 canvas = Image.new("RGB", (640,480))
 canvaspix = canvas.load()
@@ -26,80 +27,13 @@ exec(f.read())
 f.close()
 
 
-def colorTargetMatch(c):
-  if c[0] < 245 and c[0] > 170: #red
-    if c[1] < 220 and c[1] > 85: #green
-      if c[2] < 205 and c[2] > 70: #blue
-        return True
-  return False
-
-  
-def colorReflectionTest(draw, c, d, t, x, y, dolog = False):
-  im = .57
-  
-  sm = 1.0-im
-  ra = t[0]*im + d[0]*sm
-  ga = t[1]*im + d[1]*sm
-  ba = t[2]*im + d[2]*sm
-  r = c[0] - ra
-  g = c[1] - ga
-  b = c[2] - ba
-  draw.text((x,y), str(r)+","+str(g)+","+str(b), fill=(ra,ga,ba))
-  if dolog == True:
-    print "Red",r
-    print "Green",g
-    print "Blue",b
-  if r > -10 and r < 10:
-    if g > -10 and g < 10:
-      if b > -10 and b < 10:
-        return True
-  return False
-
-def colorReflectionDiff(c,d, x, dolog = False):
-  r = c[0]-d[0]
-  g = c[1]-d[1]
-  b = c[2]-d[2]
-  diffsum = abs(r) + abs(g) + abs(b)
-  if dolog == True:
-    print "Red",r
-    print "Green",g
-    print "Blue",b
-    print "Sum",diffsum
-  
-  if touchconf == True:
-    print r,g,b,diffsum
-  if g > 50 and r > 50 and b > 50:
-    return True
-  if g > r or b > r:
-    return False
-  if diffsum < 10 or diffsum > 150:
-    return False
-  if g > 10:
-    return False
-  if b > 20:
-    return False
-  if diffsum - ((g+b)/2) < 30*(1-x):
-    return False
-  #if r < 50 and r > 10: #red
-  #  if g < 10 and g > -60: #green
-  #    if b < 20 and b > -60: #blue
-  #      return True
-  return True
-  return False
-
-def colorDiffGrade(c,d):
-  r = c[0]-d[0]
-  g = c[1]-d[1]
-  b = c[2]-d[2]
-  return abs(r) + abs(g) + abs(b)
-  
-
-
 w = xe-xs
 ytr = float(tl-tr)/float(w);
 ybr = float(bl-br)/float(w);
 
-def get_image(dolog = False):
+
+def get_image(dolog = False, getpix = False):
+    global im, pix, draw
     im = highgui.cvQueryFrame(camera)
     # Add the line below if you need it (Ubuntu 8.04+)
     im = opencv.cvGetMat(im)
@@ -109,6 +43,25 @@ def get_image(dolog = False):
     pix = im.load()
     draw = ImageDraw.Draw(im)
 
+    if getpix != False:
+      global rmin, rmax, gmin, gmax, bmin, bmax
+      cr = pix[getpix[0],getpix[1]]
+      if cr[0] < rmin:
+        rmin = cr[0]
+      if cr[0] > rmax:
+        rmax = cr[0]
+      if cr[1] < gmin:
+        gmin = cr[1]
+      if cr[1] > gmax:
+        gmax = cr[1]
+      if cr[2] < bmin:
+        bmin = cr[2]
+      if cr[2] > bmax:
+        bmax = cr[2]
+      print "Pixel Color:",cr
+      saveconfig()
+
+      
     pix[xs, tl] = (100,100,255,255)
     pix[xs, bl] = (100,100,255,255)
     pix[xe, tr] = (100,100,255,255)
@@ -147,7 +100,8 @@ def get_image(dolog = False):
       touchcolor = pix[xp-5,yp]
       pix[xp,yp] = (255,255,255,255)
       #if colorShadowTest(draw, pix[xp+5, yp-10], pix[xp+5,yp-10], xp, yp):
-      if colorReflectionTest(draw, pix[xp+5,yp],pix[xp+5,yp-10], touchcolor, xp, yp, dolog):
+      if colorTest(xp, yp, dolog):
+        #if colorTest(pix[xp+5,yp],pix[xp+5,yp-10], touchcolor, xp, yp, dolog):
         #print "reflectoin: x:",(xe-x),"y:",(y-(count/2))
         draw.rectangle(((xp-10, yp-10),(xp+10, oy+10)), outline=(100,255,100))
         xd = ((xp - xs)/float(w))*640
@@ -162,8 +116,37 @@ def get_image(dolog = False):
         pix[xp-5,yp] = (0,0,255,255)
     if mode == "draw":
       return canvas
+    elif mode == "transform":
+      return im.transform((640,480), Image.QUAD, (xs,tl,xs,bl,xe,br,xe,tr))
     else:
       return im
+
+
+def saveconfig():
+  conf = """#this is the perspective distortion configuration section
+xs = """+str(xs)+"""
+xe = """+str(xe)+"""
+
+tl = """+str(tl)+"""
+bl = """+str(bl)+"""
+
+tr = """+str(tr)+"""
+br = """+str(br)+"""
+
+#this is the color detection configuration section
+rmin = """+str(rmin)+"""
+rmax = """+str(rmax)+"""
+
+gmin = """+str(gmin)+"""
+gmax = """+str(gmax)+"""
+
+bmin = """+str(bmin)+"""
+bmax = """+str(bmax)
+  print conf
+  f = open('shinyautoconf.py', 'w')
+  f.write(conf)
+  f.close()
+  print "Wrote configuration to file shinyautoconf.py"
 
 fps = 60.0
 pygame.init()
@@ -176,11 +159,12 @@ subavg = 0
 print "Press d to switch to draw mode."
 print "Press i to switch to image mode."
 print "Press c to calibrate image."
-print "Middle click to clear drawing canvas."
-print "Right click to save drawing/enable debug mode."
+print "Middle click to clear drawing canvas/Reload configuration."
+print "Right click to enable debug mode."
 
 while True:
     dolog = False
+    getpix = False
     events = pygame.event.get()
     for event in events:
         if event.type == QUIT:
@@ -195,6 +179,24 @@ while True:
             mode = "draw"
           elif event.unicode == "i":
             mode = "image"
+          elif event.unicode == "b":
+            if buildrange == True:
+              buildrange = False
+              print "Disabled Color Range Building"
+            else:
+              buildrange = True
+              print "Enabled Color Range Building"
+          elif event.unicode == "t":
+            if mode == "transform":
+              mode = ""
+              print "Disabled Auto Transform"
+            else:
+              mode = "transform"
+              print "Enabled Auto Transform"
+          elif event.unicode == "s":
+            import datetime
+            canvas.save("imgs/purty"+str(datetime.datetime.now().isoformat())+".png","PNG")
+            print "Saved Image"
           elif event.unicode == "c":
             calibrate = True
             print "Click Top Left Corner"
@@ -202,15 +204,24 @@ while True:
             touchconf = False
             if event.button == 3:
               dolog = True
-              import datetime
-              canvas.save("imgs/purty"+str(datetime.datetime.now().isoformat())+".png","PNG")
             elif event.button == 2:
               canvas = Image.new("RGB", (640,480))
               canvaspix = canvas.load()
               draw2 = ImageDraw.Draw(canvas)
               print "Reset Canvas"
+              f = open('shinyconf.py', 'r')
+              exec(f.read())
+              f.close()
+              print "Loaded Manual Configuration and Detection Runtime"
+              f = open('shinyautoconf.py', 'r')
+              exec(f.read())
+              f.close()
+              print "Loaded Automatic Generated Configuration"
+            elif event.button == 1 and calibrate == False and buildrange == True:
+              #yes, i did something very stupid and ugly just to not edit the calibration code
+              getpix = event.pos
+              #buildrange = False
             elif event.button == 1 and calibrate == True:
-             
               clicks += 1
               if clicks == 1:
                 tl = event.pos[1]
@@ -231,22 +242,10 @@ while True:
                 xe = (subavg + event.pos[0])/2
                 print "Done. To recalibrate, press c and then click Top Left corner again."
                 calibrate = False
-                conf = """xs = """+str(xs)+"""
-xe = """+str(xe)+"""
-
-tl = """+str(tl)+"""
-bl = """+str(bl)+"""
-
-tr = """+str(tr)+"""
-br = """+str(br)
-                print conf
-                f = open('shinyautoconf.py', 'w')
-                f.write(conf)
-                f.close()
-                print "Wrote configuration to file shinyautoconf.py"
+                saveconfig()
                 clicks = 0
             
-    im = get_image(dolog)
+    im = get_image(dolog, getpix)
     pg_img = pygame.image.frombuffer(im.tostring(), im.size, im.mode)
     screen.blit(pg_img, (0,0))
     pygame.display.flip()
